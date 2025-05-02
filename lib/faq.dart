@@ -28,7 +28,11 @@ class FAQPage extends StatelessWidget {
                 'Repeated offense of explicit materials and aggression towards other users can get you banned. Offense of scam fundings will result in immediate account termination.\n\n'
                 '5. I found some violating contents on the platforms. What can I do?'
                 'Answer: Reach out to use via emails provided in the Helpline section of our platforms. While filing a report, remember to attach a screenshots as evidence.\n'
-                'MYTECH X does not tolerate false report, therefore it is important that you do not abuse this service, else your account can get removed off the platforms.')
+                'MYTECH X does not tolerate false report, therefore it is important that you do not abuse this service, else your account can get removed off the platforms.\n\n'
+                '6. I want to post an events with image. How can I get the image URL?\n'
+                'Answer: Assuming the image source already comes from other website, you can right click and select "Open image in a new tab" which redirects you to the image preview page. Copy the link and paste it in.\n\n'
+                '7. The event image preview shows "Invalid Image URL". What can I do?\n'
+                'Answer: These error message occur if the original source of the image does not allow public sharing of their images. You can refer to other public image sharing domain and copy the link instead.')
           ],
         ),
       ),
