@@ -9,12 +9,10 @@
 // );
 // },
 // child: const Text('Event Button'))
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:assignment_project/addFunding.dart';
-
-void main() {
-  runApp(const FundingsPage());
-}
+import 'addFunding.dart'
 
 class FundingsPage extends StatelessWidget {
   const FundingsPage({super.key});
@@ -25,7 +23,7 @@ class FundingsPage extends StatelessWidget {
     return MaterialApp(
       title: 'Funding',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const Funding(title: 'Funding'),
@@ -202,12 +200,13 @@ class _MyHomePageState extends State<Funding> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Thank you for donating \$${amount}!')),
     );
+
   }
 
   @override
   //display
   Widget build(BuildContext context) {
-    //final firestore = FirebaseFirestore.instance;
+    final firestore = FirebaseFirestore.instance;
 
     return Scaffold(
       appBar: AppBar(
@@ -236,18 +235,30 @@ class _MyHomePageState extends State<Funding> {
           ),
         ],
       ),
-      body: Padding(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: firestore.collection("events").orderBy('timestamp', descending: true).snapshots(),
+    builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: CircularProgressIndicator());
+    } else if (snapshot.hasError) {
+    return const Center(child: Text('Something went wrong.'));
+    } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+    return const Center(child: Text('No events posted.'));
+    }
+
+    final fund = snapshot.data!.docs;
+    const Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+            crossAxisCount: 2,
             crossAxisSpacing: 8, // horizontal space
             mainAxisSpacing: 10, // vertical space
             childAspectRatio: 1,
           ),
           itemCount: fundingEvents.length,
           itemBuilder: (context, index) {
-            final event = fundingEvents[index];
+            final fund = fundingEvents[index];
             return FundingCard(
               title: event['title'],
               description: event['description'],
