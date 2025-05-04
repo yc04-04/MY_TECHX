@@ -12,7 +12,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'addFunding.dart'
+import 'addFunding.dart';
 
 class FundingsPage extends StatelessWidget {
   const FundingsPage({super.key});
@@ -49,6 +49,7 @@ class FundingCard extends StatelessWidget {
   final String imageUrl;
   final int raised;
   final int goal;
+  final Function() onDonate;
 
   const FundingCard({
     required this.title,
@@ -56,6 +57,7 @@ class FundingCard extends StatelessWidget {
     required this.imageUrl,
     required this.raised,
     required this.goal,
+    required this.onDonate,
   });
 
   @override
@@ -87,7 +89,10 @@ class FundingCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .titleMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -123,10 +128,9 @@ class FundingCard extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      _showDonateDialog;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Donate clicked on $title')),
-                      );
+                      _showDonateDialog(context, (amount) {
+                        _donateToEvent(index, amount);
+                      });
                     },
                     child: Text('Donate'),
                     style: ElevatedButton.styleFrom(
@@ -198,44 +202,43 @@ class _MyHomePageState extends State<Funding> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Enter Donation Amount'),
-        content: TextField(
-          controller: _donationController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: 'Amount (e.g., 50)'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+      builder: (context) =>
+          AlertDialog(
+            title: Text('Enter Donation Amount'),
+            content: TextField(
+              controller: _donationController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(hintText: 'Amount (e.g., 50)'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final amount = int.tryParse(_donationController.text.trim());
+                  if (amount != null && amount > 0) {
+                    onDonate(amount);
+                    Navigator.pop(context);
+                  } else {
+                    // Optionally show an error
+                  }
+                },
+                child: Text('Donate'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              final amount = int.tryParse(_donationController.text.trim());
-              if (amount != null && amount > 0) {
-                onDonate(amount);
-                Navigator.pop(context);
-              } else {
-                // Optionally show an error
-              }
-            },
-            child: Text('Donate'),
-          ),
-        ],
-      ),
     );
   }
 
-  void _donateToEvent(int index, int amount) {
-    setState(() {
-      fundingEvents[index]['raised'] += amount;
-    });
+  void _donateToEvent(String docId, int currentRaised, int amount) {
+    final newRaised = currentRaised + amount;
 
     FirebaseFirestore.instance
-        .collection('fundingEvents')
-        .doc(fundingEvents[index][id])  // make sure you store the document ID!
-        .update({'raised': fundingEvents[index]['raised']});
+        .collection('events')
+        .doc(docId)
+        .update({'raised': newRaised});
   }
 
   @override
@@ -245,10 +248,13 @@ class _MyHomePageState extends State<Funding> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
         title: Text(widget.title),
         leading: IconButton(
-            onPressed: (){
+            onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -271,48 +277,49 @@ class _MyHomePageState extends State<Funding> {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: firestore.collection("events").orderBy('timestamp', descending: true).snapshots(),
-    builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-    return const Center(child: CircularProgressIndicator());
-    } else if (snapshot.hasError) {
-    return const Center(child: Text('Something went wrong.'));
-    } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-    return const Center(child: Text('No events posted.'));
-    }
+        stream: firestore.collection("events").orderBy(
+            'timestamp', descending: true).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Something went wrong.'));
+          } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No events posted.'));
+          }
 
-    final fund = snapshot.data!.docs;
-    const Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          final fund = snapshot.data!.docs;
+          const Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 8, // horizontal space
             mainAxisSpacing: 10, // vertical space
             childAspectRatio: 1,
           ),
-          itemCount: fundingEvents.length,
+          itemCount: fund.length,
           itemBuilder: (context, index) {
-            final fund = fundingEvents[index];
+            final event = fund[index].data() as Map<String, dynamic>;
+
             return FundingCard(
               title: event['title'],
               description: event['description'],
               imageUrl: event['imageUrl'],
               raised: event['raised'],
               goal: event['goal'],
+              onDonate: (amount) {
+                _donateToEvent(fund[index].id, event['raised'], amount);
+              },
             );
-
-          },
-        ),
-
-      ),
-
-      floatingActionButton: ElevatedButton(
-        onPressed: () {
-          Navigator.pop(context);
+            },
         },
-        child: Text('back'),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    floatingActionButton: ElevatedButton(
+    onPressed: () {
+    Navigator.pop(context);
+    },
+    child: Text('back'),
+    ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
