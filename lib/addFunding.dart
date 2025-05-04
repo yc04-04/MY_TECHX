@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-//import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'dart:async';
 
 
 class AddFunding extends StatefulWidget {
@@ -20,27 +21,100 @@ class _InsertFundingState extends State<AddFunding> {
   final _goalCtrl = TextEditingController();
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        // await FirebaseFirestore.instance.collection('fundingEvents').add({
-        //   'title': _titleCtrl.text.trim(),
-        //   'description': _descCtrl.text.trim(),
-        //   'imageUrl': _imgUrlCtrl.text.trim(),
-        //   'raised': 0,
-        //   'goal': int.parse(_goalCtrl.text.trim()),
-        // });
+        await FirebaseFirestore.instance.collection('fundingEvents').add({
+          final title: _titleCtrl.text.trim(),
+          final desc: _descCtrl.text.trim(),
+          final imgUrl: _imgUrlCtrl.text.trim(),
+          double raised: 0,
+          final goal: int.parse(_goalCtrl.text.trim()),
+        };
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Funding event added successfully!')),
-        );
+    if (title.isEmpty)
+        {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Add a Title!')),
+          );
+          return;
+        }
 
-        Navigator.pop(context); // Go back to the previous page
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
+    if (desc.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Add description!')),
+      );
+      return;
     }
+
+    if (imgUrl.isEmpty) {
+      Uri? uri;
+      try {
+        uri = Uri.parse(imageText);
+        if (!uri.hasScheme || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+          throw Exception();
+        }
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid image URL format.')),
+        );
+        return;
+      }
+
+      final ImageStream stream = Image.network(imageText).image.resolve(const ImageConfiguration());
+      final completer = Completer<void>();
+      final listener = ImageStreamListener(
+            (info, _) => completer.complete(),
+        onError: (error, _) => completer.completeError('Invalid or unreachable image URL.'),
+      );
+
+      stream.addListener(listener);
+      try {
+        await completer.future;
+      } catch (e) {
+        stream.removeListener(listener);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+        return;
+      }
+      stream.removeListener(listener);
+    }
+
+        if(goal.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Add a goal!')),
+      );
+      return;
+    }
+        setState(() {
+          _isLoading = true;
+        });
+
+        try {
+          final user = auth.currentUser;
+          if (user != null) {
+            await firestore.collection("fund").add({
+              "title": title,
+              "desc": desc, // can be empty string
+              "imgUrl": imgUrl,
+              "goal": goal,
+              "raised": raised,
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Funding event posted successfully!')),
+            );
+            Navigator.pop(context);
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
   }
 
   @override
