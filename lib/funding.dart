@@ -123,7 +123,7 @@ class FundingCard extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Add donate action here   ojsfohrohsierhbgiurheoiurhsoirhgoivsh
+                      _showDonateDialog;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Donate clicked on $title')),
                       );
@@ -193,14 +193,49 @@ class _MyHomePageState extends State<Funding> {
     },
   ];
 
-  void donateToEvent(int index, int amount) {
+  void _showDonateDialog(BuildContext context, Function(int) onDonate) {
+    final _donationController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Enter Donation Amount'),
+        content: TextField(
+          controller: _donationController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(hintText: 'Amount (e.g., 50)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final amount = int.tryParse(_donationController.text.trim());
+              if (amount != null && amount > 0) {
+                onDonate(amount);
+                Navigator.pop(context);
+              } else {
+                // Optionally show an error
+              }
+            },
+            child: Text('Donate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _donateToEvent(int index, int amount) {
     setState(() {
       fundingEvents[index]['raised'] += amount;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Thank you for donating \$${amount}!')),
-    );
 
+    FirebaseFirestore.instance
+        .collection('fundingEvents')
+        .doc(fundingEvents[index][id])  // make sure you store the document ID!
+        .update({'raised': fundingEvents[index]['raised']});
   }
 
   @override
