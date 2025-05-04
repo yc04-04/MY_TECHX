@@ -10,13 +10,14 @@
 // },
 // child: const Text('Event Button'))
 import 'package:flutter/material.dart';
-import 'package:mad_assignment/addFunding.dart';
+import 'package:assignment_project/addFunding.dart';
+
 void main() {
-  runApp(const Fundings());
+  runApp(const FundingsPage());
 }
 
-class Fundings extends StatelessWidget {
-  const Fundings({super.key});
+class FundingsPage extends StatelessWidget {
+  const FundingsPage({super.key});
 
 // This widget is the root of your application.
   @override
