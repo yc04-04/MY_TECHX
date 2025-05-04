@@ -21,100 +21,58 @@ class _InsertFundingState extends State<AddFunding> {
   final _goalCtrl = TextEditingController();
 
   Future<void> _submitForm() async {
-        await FirebaseFirestore.instance.collection('fundingEvents').add({
-          final title: _titleCtrl.text.trim(),
-          final desc: _descCtrl.text.trim(),
-          final imgUrl: _imgUrlCtrl.text.trim(),
-          double raised: 0,
-          final goal: int.parse(_goalCtrl.text.trim()),
-        };
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    if (title.isEmpty)
-        {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Add a Title!')),
-          );
-          return;
-        }
+    final title = _titleCtrl.text.trim();
+    final desc = _descCtrl.text.trim();
+    final imgUrl = _imgUrlCtrl.text.trim();
+    final goal = int.tryParse(_goalCtrl.text.trim()) ?? 0;
+    final raised = 0;
 
-    if (desc.isEmpty) {
+    // Validate image URL format
+    Uri? uri;
+    try {
+      uri = Uri.parse(imgUrl);
+      if (!uri.hasScheme || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+        throw Exception('Invalid image URL format.');
+      }
+    } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Add description!')),
+        const SnackBar(content: Text('Invalid image URL format.')),
       );
       return;
     }
 
-    if (imgUrl.isEmpty) {
-      Uri? uri;
-      try {
-        uri = Uri.parse(imageText);
-        if (!uri.hasScheme || !(uri.scheme == 'http' || uri.scheme == 'https')) {
-          throw Exception();
-        }
-      } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid image URL format.')),
-        );
-        return;
-      }
+    setState(() {
+      _isLoading = true;
+    });
 
-      final ImageStream stream = Image.network(imageText).image.resolve(const ImageConfiguration());
-      final completer = Completer<void>();
-      final listener = ImageStreamListener(
-            (info, _) => completer.complete(),
-        onError: (error, _) => completer.completeError('Invalid or unreachable image URL.'),
-      );
+    try {
+      await FirebaseFirestore.instance.collection('fundingEvents').add({
+        'title': title,
+        'desc': desc,
+        'imgUrl': imgUrl,
+        'goal': goal,
+        'raised': raised,
+      });
 
-      stream.addListener(listener);
-      try {
-        await completer.future;
-      } catch (e) {
-        stream.removeListener(listener);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-        return;
-      }
-      stream.removeListener(listener);
-    }
-
-        if(goal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Add a goal!')),
+        const SnackBar(content: Text('Funding event posted successfully!')),
       );
-      return;
-    }
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
         setState(() {
-          _isLoading = true;
+          _isLoading = false;
         });
-
-        try {
-          final user = auth.currentUser;
-          if (user != null) {
-            await firestore.collection("fund").add({
-              "title": title,
-              "desc": desc, // can be empty string
-              "imgUrl": imgUrl,
-              "goal": goal,
-              "raised": raised,
-            });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Funding event posted successfully!')),
-            );
-            Navigator.pop(context);
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
-        } finally {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        }
+      }
+    }
   }
 
   @override
@@ -144,6 +102,7 @@ class _InsertFundingState extends State<AddFunding> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
+          key: _formKey,
             child: ListView(
               children: [
                 TextFormField(
@@ -188,10 +147,12 @@ class _InsertFundingState extends State<AddFunding> {
                 ),
                 SizedBox(height: 20,),
                 ElevatedButton(
-                    onPressed: (){
-                      _submitForm;
-                      _clearAll;},
-                    child: Text('Submit Funding'))
+                  onPressed: () {
+                    _submitForm();
+                    _clearAll();
+                  },
+                  child: const Text('Submit Funding'),
+                ),
               ],
             )
         ),
