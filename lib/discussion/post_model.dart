@@ -5,7 +5,6 @@ class PostModel {
   final String title;
   final String objective;
   final String details;
-  final String imageUrl;
   final String userId;
   final String username;
   final DateTime timestamp;
@@ -21,7 +20,6 @@ class PostModel {
     required this.title,
     required this.objective,
     required this.details,
-    required this.imageUrl,
     required this.userId,
     required this.username,
     required this.timestamp,
@@ -37,7 +35,6 @@ class PostModel {
     'title': title,
     'objective': objective,
     'details': details,
-    'imageUrl': imageUrl,
     'userId': userId,
     'username': username,
     'timestamp': timestamp,
@@ -55,7 +52,6 @@ class PostModel {
       title: data['title'] ?? '',
       objective: data['objective'] ?? '',
       details: data['details'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
       userId: data['userId'] ?? '',
       username: data['username'] ?? '',
       timestamp: (data['timestamp'] as Timestamp).toDate(),

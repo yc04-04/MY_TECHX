@@ -1,11 +1,13 @@
+import 'dart:convert'; // Add this import for base64 decoding
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'profile.dart';
-import 'discuss.dart';
-import 'funding.dart';
-import 'events.dart';
-import 'helpline.dart';
+import 'discussion/discussion_page.dart';
+import 'profile/profile.dart';
+import 'discussion/discuss.dart';
+import 'fund/funding.dart';
+import 'event/events.dart';
+import 'help/helpline.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
             if (!snapshot.hasData || snapshot.data == null) {
               return const Text("Welcome, Guest");
             }
-            var userData = snapshot.data!.data() as Map<String, dynamic>?;
-            var name = userData?['name'] ?? "Guest";
+            var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+            var name = userData['name'] ?? "Guest";
             return Text("Welcome, $name");
           },
         ),
@@ -56,14 +58,45 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (context) => const Profile()),
                 );
               },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
-                    : null,
-                child: user?.photoURL == null
-                    ? const Icon(Icons.person, size: 20)
-                    : null,
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data == null) {
+                    return const CircleAvatar(
+                      radius: 20,
+                      child: Icon(Icons.person, size: 20),
+                    );
+                  }
+                  var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                  var profileImage = userData['profileImage'];
+
+                  // Handle the profile image logic
+                  if (profileImage != null && profileImage.isNotEmpty) {
+                    // Check if the profile image is a base64 string
+                    try {
+                      final decodedImage = base64Decode(profileImage);
+                      return CircleAvatar(
+                        radius: 20,
+                        backgroundImage: MemoryImage(decodedImage),
+                      );
+                    } catch (e) {
+                      // If not base64, treat it as a URL and load as a network image
+                      return CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(profileImage),
+                      );
+                    }
+                  } else {
+                    // Default profile icon if no image
+                    return const CircleAvatar(
+                      radius: 20,
+                      child: Icon(Icons.person, size: 20),
+                    );
+                  }
+                },
               ),
             ),
           ),
@@ -80,15 +113,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage:
-                        FirebaseAuth.instance.currentUser?.photoURL != null
-                            ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
-                            : null,
-                        child: FirebaseAuth.instance.currentUser?.photoURL == null
-                            ? const Icon(Icons.person, size: 30)
-                            : null,
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser?.uid)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return const CircleAvatar(
+                              radius: 30,
+                              child: Icon(Icons.person, size: 30),
+                            );
+                          }
+                          var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                          var profileImage = userData['profileImage'];
+
+                          // Handle the profile image logic for the drawer
+                          if (profileImage != null && profileImage.isNotEmpty) {
+                            try {
+                              final decodedImage = base64Decode(profileImage);
+                              return CircleAvatar(
+                                radius: 30,
+                                backgroundImage: MemoryImage(decodedImage),
+                              );
+                            } catch (e) {
+                              return CircleAvatar(
+                                radius: 30,
+                                backgroundImage: NetworkImage(profileImage),
+                              );
+                            }
+                          } else {
+                            return const CircleAvatar(
+                              radius: 30,
+                              child: Icon(Icons.person, size: 30),
+                            );
+                          }
+                        },
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -107,8 +167,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               );
                             }
-                            var userData = snapshot.data!.data() as Map<String, dynamic>?;
-                            String name = userData?['name'] ?? "Guest";
+                            var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                            String name = userData['name'] ?? "Guest";
                             String email = FirebaseAuth.instance.currentUser?.email ?? "No email";
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +260,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDrawerItem(IconData icon, String title, int index) {
     return ListTile(
-      leading: Icon(icon, color: Colors.deepPurple),
+      leading: index == 0
+          ? StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const CircleAvatar(
+              radius: 20,
+              child: Icon(Icons.person, size: 20),
+            );
+          }
+          var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          var profileImage = userData['profileImage'];
+
+          // Handle the profile image logic
+          if (profileImage != null && profileImage.isNotEmpty) {
+            try {
+              final decodedImage = base64Decode(profileImage);
+              return CircleAvatar(
+                radius: 20,
+                backgroundImage: MemoryImage(decodedImage),
+              );
+            } catch (e) {
+              return CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(profileImage),
+              );
+            }
+          } else {
+            return const CircleAvatar(
+              radius: 20,
+              child: Icon(Icons.person, size: 20),
+            );
+          }
+        },
+      )
+          : Icon(icon, color: Colors.deepPurple),
       title: Text(title),
       selected: _selectedIndex == index,
       onTap: () {

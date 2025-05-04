@@ -22,8 +22,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
   late TextEditingController _detailsController;
   late String _businessCategory;
   late String _targetMarket;
-  Uint8List? _imageBytes;
-  XFile? _newImageFile;
+
 
   final List<String> _categories = [
     'Technology',
@@ -56,46 +55,16 @@ class _EditPostScreenState extends State<EditPostScreen> {
     _targetMarket = widget.post.toMap()['targetMarket'] ?? 'Local Community';
   }
 
-  Future<void> _pickNewImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _imageBytes = bytes;
-        _newImageFile = picked;
-      });
-    }
-  }
-
-  Future<String> _uploadNewImage(XFile image) async {
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('post_images')
-        .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-    final uploadTask = await ref.putData(await image.readAsBytes());
-    return await uploadTask.ref.getDownloadURL();
-  }
 
   void updatePost() async {
     final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.post.id);
 
-    String? updatedImageUrl = widget.post.imageUrl;
-    if (_newImageFile != null) {
-      try {
-        updatedImageUrl = await _uploadNewImage(_newImageFile!);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image upload failed. Please try again.')),
-        );
-        return;
-      }
-    }
+
 
     await postRef.update({
       'title': _titleController.text.trim(),
       'objective': _objectiveController.text.trim(),
       'details': _detailsController.text.trim(),
-      'imageUrl': updatedImageUrl,
       'businessCategory': _businessCategory,
       'targetMarket': _targetMarket,
       'timestamp': Timestamp.now(),
@@ -128,7 +97,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
             TextField(
               controller: _detailsController,
               maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Details'),
+              decoration: const InputDecoration(labelText: 'Business Description'),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
@@ -143,17 +112,6 @@ class _EditPostScreenState extends State<EditPostScreen> {
               items: _markets.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
               onChanged: (val) => setState(() => _targetMarket = val!),
               decoration: const InputDecoration(labelText: 'Target Market'),
-            ),
-            const SizedBox(height: 12),
-            _imageBytes != null
-                ? Image.memory(_imageBytes!, height: 150)
-                : (widget.post.imageUrl.isNotEmpty
-                ? Image.network(widget.post.imageUrl, height: 150)
-                : const Text('No image')),
-            ElevatedButton.icon(
-              onPressed: _pickNewImage,
-              icon: const Icon(Icons.image),
-              label: const Text('Change Image'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

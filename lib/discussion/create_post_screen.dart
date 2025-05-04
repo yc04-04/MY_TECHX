@@ -45,26 +45,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String? selectedCategory;
   String? selectedTargetMarket;
 
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _imageBytes = bytes;
-        _imageFile = picked;
-      });
-    }
-  }
 
-  Future<String> _uploadImage(XFile image) async {
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('post_images')
-        .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-    final uploadTask = await ref.putData(await image.readAsBytes());
-    return await uploadTask.ref.getDownloadURL();
-  }
+
 
   void _submitPost() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -91,24 +74,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     setState(() => isUploading = true);
 
-    String imageUrl = '';
-    if (_imageFile != null) {
-      try {
-        imageUrl = await _uploadImage(_imageFile!);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image upload failed. Please try again.')),
-        );
-        setState(() => isUploading = false);
-        return;
-      }
-    }
+
 
     final post = {
       'title': title,
       'objective': objective,
       'details': details,
-      'imageUrl': imageUrl,
       'username': user.email ?? 'User',
       'userId': user.uid,
       'timestamp': Timestamp.now(),
@@ -176,15 +147,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 return DropdownMenuItem(value: market, child: Text(market));
               }).toList(),
               onChanged: (val) => setState(() => selectedTargetMarket = val),
-            ),
-            const SizedBox(height: 10),
-            _imageBytes == null
-                ? const Text('No image selected')
-                : Image.memory(_imageBytes!, height: 150),
-            ElevatedButton.icon(
-              onPressed: _pickImage,
-              icon: const Icon(Icons.image),
-              label: const Text('Pick Image'),
             ),
             const SizedBox(height: 20),
             isUploading

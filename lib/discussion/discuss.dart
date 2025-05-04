@@ -181,7 +181,23 @@ class _DiscussionState extends State<Discussion> {
               IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () async {
+                  // Delete the post itself
                   await FirebaseFirestore.instance.collection('posts').doc(widget.post.id).delete();
+
+                  // Delete all comments associated with the post (requires querying)
+                  final commentsSnapshot = await FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(widget.post.id)
+                      .collection('comments')
+                      .get();
+
+                  // Iterate through the documents and delete each one
+                  final batch = FirebaseFirestore.instance.batch();
+                  for (final doc in commentsSnapshot.docs) {
+                    batch.delete(doc.reference);
+                  }
+                  await batch.commit();
+
                   Navigator.pop(context);
                 },
               )

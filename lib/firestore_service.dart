@@ -1,7 +1,7 @@
 // === firestore_service.dart ===
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'post_model.dart';
+import 'discussion/post_model.dart';
 
 class FirestoreService {
   final _db = FirebaseFirestore.instance;
