@@ -55,6 +55,13 @@ class _EditPostScreenState extends State<EditPostScreen> {
     _targetMarket = widget.post.toMap()['targetMarket'] ?? 'Local Community';
   }
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _objectiveController.dispose();
+    _detailsController.dispose();
+    super.dispose();
+  }
 
   void updatePost() async {
     final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.post.id);

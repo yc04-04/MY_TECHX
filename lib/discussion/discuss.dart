@@ -54,6 +54,15 @@ class _DiscussionState extends State<Discussion> {
     });
   }
 
+  @override
+  void dispose() {
+    _commentController.dispose();
+    for (var controller in _replyControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   void donate() async {
     final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.post.id);
     final amountController = TextEditingController();

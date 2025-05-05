@@ -18,8 +18,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _objectiveController = TextEditingController();
   final _detailsController = TextEditingController();
   final _donationGoalController = TextEditingController();
-  Uint8List? _imageBytes;
-  XFile? _imageFile;
+
   bool isUploading = false;
 
   final List<String> businessCategories = [
@@ -74,7 +73,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     setState(() => isUploading = true);
 
-
+    @override
+    void dispose() {
+      _titleController.dispose();
+      _objectiveController.dispose();
+      _detailsController.dispose();
+      _donationGoalController.dispose();
+      super.dispose();
+    }
 
     final post = {
       'title': title,
