@@ -1,5 +1,3 @@
-// === discussions_page.dart (with dynamic donation goal, progress bar, and percentage) ===
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
