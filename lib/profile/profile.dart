@@ -446,7 +446,7 @@ class _ProfileState extends State<Profile> {
                                   content: Text(_isSortedAscending
                                       ? 'Sorted by Oldest First'
                                       : 'Sorted by Newest First'),
-                                  duration: Duration(seconds: 2),
+                                  duration: Duration(seconds: 1),
                                 ),
                               );
                             });
