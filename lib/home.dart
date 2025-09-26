@@ -1,4 +1,5 @@
 import 'dart:convert'; // Add this import for base64 decoding
+import 'package:assignment_project/fund/fund.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -206,6 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildDrawerItem(Icons.monetization_on, "Fundings", 3),
             _buildDrawerItem(Icons.event, "Events", 4),
             _buildDrawerItem(Icons.phone_in_talk, "Helplines", 5),
+            _buildDrawerItem(Icons.account_balance_wallet, "Funding", 6),
           ],
         ),
       ),
@@ -234,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   "assets/images/fund.jpg",
                   "Fundings",
                   "Explore funding opportunities and financial support.",
-                  const FundingsPage(),
+                  const Fund(),
                 ),
                 _buildDashboardSection(
                   context,
@@ -312,7 +314,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const EventsPage()));
         } else if (index == 5) {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const HelplinesPage()));
-        } else {
+        } else if (index == 6) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const Fund()));
+        }else {
           setState(() {
             _selectedIndex = index;
           });

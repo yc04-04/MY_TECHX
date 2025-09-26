@@ -120,7 +120,7 @@ class _FundingState extends State<Funding> {
             crossAxisCount: 2,
             crossAxisSpacing: 8,
             mainAxisSpacing: 10,
-            childAspectRatio: 1,
+            childAspectRatio: 0.5,
           ),
           itemCount: fundingEvents.length,
           itemBuilder: (context, index) {
@@ -152,7 +152,7 @@ class _FundingState extends State<Funding> {
                         return Container(
                           height: 100,
                           width: double.infinity,
-                          color: Colors.grey.shade300,
+                          color: Colors.blueAccent,
                           child: const Text(
                               'No image found :/',
                             textAlign: TextAlign.center ,
@@ -233,7 +233,6 @@ class _FundingState extends State<Funding> {
               });
             }
           });
-
         },
         child: Text('Add Funding'),
       ),
